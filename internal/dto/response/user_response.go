@@ -22,7 +22,7 @@ type UserResponse struct {
 func ToUserResponse(u *model.User) UserResponse {
 	return UserResponse{
 		ID:        u.ID,
-		Name:      u.Name,
+		Name:      u.FullName,
 		Email:     u.Email,
 		Phone:     u.Phone,
 		Role:      u.Role,
