@@ -9,3 +9,8 @@ type LoginRequest struct {
 	Phone    string `form:"phone" binding:"required,phone"`
 	Password string `form:"password" binding:"required"`
 }
+
+type GoogleClaims struct {
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}

@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/davidcm146/bus-booking-be/configs"
 	"github.com/davidcm146/bus-booking-be/internal/dto/request"
 	"github.com/davidcm146/bus-booking-be/internal/dto/response"
 	"github.com/davidcm146/bus-booking-be/internal/mocks"
@@ -54,7 +55,8 @@ func multipartBody(t *testing.T, fields map[string]string) (*bytes.Buffer, strin
 // Dummy values for tests only — not real credentials.
 // Must satisfy the strong_password validator (upper, lower, digit, 8+ chars).
 const testPassword = "Testpass1dummy"
-const wrongPassword = "Wrongpass1dummy"
+
+var testOAuthConfig = configs.OAuthConfig{GoogleClientID: "test"}
 
 func newAuthRouter(h *AuthHandler) *gin.Engine {
 	r := gin.New()
@@ -69,7 +71,7 @@ func newAuthRouter(h *AuthHandler) *gin.Engine {
 func TestAuthHandler_Signup(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		svc := new(mocks.MockAuthService)
-		h := NewAuthHandler(svc)
+		h := NewAuthHandler(svc, testOAuthConfig)
 		r := newAuthRouter(h)
 
 		expected := &response.SignupResponse{
@@ -101,7 +103,7 @@ func TestAuthHandler_Signup(t *testing.T) {
 
 	t.Run("validation fails on missing phone", func(t *testing.T) {
 		svc := new(mocks.MockAuthService)
-		h := NewAuthHandler(svc)
+		h := NewAuthHandler(svc, testOAuthConfig)
 		r := newAuthRouter(h)
 
 		body, boundary := multipartBody(t, map[string]string{
@@ -121,7 +123,7 @@ func TestAuthHandler_Signup(t *testing.T) {
 func TestAuthHandler_Login(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		svc := new(mocks.MockAuthService)
-		h := NewAuthHandler(svc)
+		h := NewAuthHandler(svc, testOAuthConfig)
 		r := newAuthRouter(h)
 
 		expected := &response.LoginResponse{
@@ -148,7 +150,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 	t.Run("invalid credentials returns 401", func(t *testing.T) {
 		svc := new(mocks.MockAuthService)
-		h := NewAuthHandler(svc)
+		h := NewAuthHandler(svc, testOAuthConfig)
 		r := newAuthRouter(h)
 
 		svc.On("Login", mock.Anything, mock.Anything).Return(nil, apperror.Unauthorized("auth.invalid_credentials"))
@@ -169,7 +171,7 @@ func TestAuthHandler_Login(t *testing.T) {
 
 func TestAuthHandler_Me(t *testing.T) {
 	svc := new(mocks.MockAuthService)
-	h := NewAuthHandler(svc)
+	h := NewAuthHandler(svc, testOAuthConfig)
 	r := newAuthRouter(h)
 
 	expected := &response.UserResponse{ID: 7, Phone: "+84901234567"}

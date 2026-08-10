@@ -53,7 +53,7 @@ func New() (*Application, error) {
 
 	container := NewContainer(gormDB, cfg)
 
-	r := router.New(container.Handlers(), cfg.JWT.Secret)
+	r := router.New(container.Handlers(), cfg.JWT.Secret, cfg.App.CORSOrigins)
 
 	return &Application{
 		Config: cfg,

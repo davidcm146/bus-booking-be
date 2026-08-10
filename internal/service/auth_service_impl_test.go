@@ -28,6 +28,10 @@ func newAuthSvc(repo *mocks.MockUserRepository) *AuthServiceImpl {
 	return NewAuthService(repo, roles, configs.JWTConfig{
 		Secret:    "test-secret",
 		ExpiresIn: time.Hour,
+	}, configs.OAuthConfig{
+		GoogleClientID:     "test",
+		GoogleClientSecret: "test",
+		GoogleRedirectURL:  "test",
 	})
 }
 

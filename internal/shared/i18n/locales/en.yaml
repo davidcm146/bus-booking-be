@@ -18,6 +18,7 @@ auth:
   failed_hash_password: "Failed to hash password"
   failed_register: "Failed to register account"
   failed_generate_token: "Failed to generate token"
+  failed_oauth: "Failed to authenticate with OAuth provider"
 
 user:
   not_found: "User not found"

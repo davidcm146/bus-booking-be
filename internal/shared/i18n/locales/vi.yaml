@@ -18,6 +18,7 @@ auth:
   failed_hash_password: "Không thể mã hoá mật khẩu"
   failed_register: "Không thể đăng ký tài khoản"
   failed_generate_token: "Không thể tạo token"
+  failed_oauth: "Không thể xác thực với Oauth provider"
 
 user:
   not_found: "Không tìm thấy người dùng"
