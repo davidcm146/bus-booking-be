@@ -18,7 +18,7 @@ type Container struct {
 func NewContainer(db *gorm.DB, cfg *configs.Config) *Container {
 	c := &Container{
 		user: module.NewUserModule(db),
-		auth: module.NewAuthModule(db, cfg.JWT),
+		auth: module.NewAuthModule(db, cfg.JWT, cfg.OAuth),
 	}
 
 	c.handlers = &router.Handlers{
