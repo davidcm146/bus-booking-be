@@ -40,3 +40,7 @@ migrate-down-to:
 
 migrate-status:
 	goose -dir migrations postgres "$(DATABASE_URL)" status
+
+# DATABASE SEED (re-applies the seed migration)
+seed:
+	goose -dir migrations postgres "$(DATABASE_URL)" redo

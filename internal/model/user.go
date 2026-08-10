@@ -15,8 +15,8 @@ const (
 
 // User is the core domain entity representing a system user.
 type User struct {
-	ID        int        `gorm:"type:int;default:autoIncrement;primaryKey" json:"id"`
-	Name      string     `gorm:"type:varchar(255);not null" json:"name"`
+	ID        int        `gorm:"primaryKey;autoIncrement" json:"id"`
+	FullName  string     `gorm:"type:varchar(255);not null" json:"name"`
 	Email     string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"email"`
 	Phone     string     `gorm:"type:varchar(20)" json:"phone"`
 	Password  string     `gorm:"type:varchar(255);not null" json:"-"`

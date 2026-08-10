@@ -34,7 +34,7 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 	}
 
 	user := &model.User{
-		Name:     req.Name,
+		FullName: req.Name,
 		Email:    req.Email,
 		Phone:    req.Phone,
 		Password: req.Password, // TODO: hash password before storing
@@ -76,7 +76,7 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int, req request.Up
 
 	// Apply partial updates
 	if req.Name != "" {
-		user.Name = req.Name
+		user.FullName = req.Name
 	}
 	if req.Email != "" {
 		// Check if new email conflicts with another user
