@@ -1,9 +1,12 @@
 package router
 
 import (
+	"time"
+
 	"github.com/davidcm146/bus-booking-be/internal/handler"
 	"github.com/davidcm146/bus-booking-be/internal/middleware"
 	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -14,10 +17,17 @@ type Handlers struct {
 }
 
 // New creates and configures the Gin engine with all route groups.
-func New(h *Handlers, i18nService i18n.I18n, jwtSecret string) *gin.Engine {
+func New(h *Handlers, i18nService i18n.I18n, jwtSecret string, corsOrigins []string) *gin.Engine {
 	r := gin.Default()
 
 	// --- Global middleware ---
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     corsOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 	r.Use(middleware.LocaleMiddleware(i18nService))
 
 	// --- Health check ---
@@ -41,6 +51,8 @@ func registerAuthRoutes(rg *gin.RouterGroup, h *handler.AuthHandler, jwtSecret s
 		auth.POST("/signup", h.Signup)
 		auth.POST("/login", h.Login)
 		auth.GET("/me", middleware.AuthMiddleware(jwtSecret), h.Me)
+		auth.GET("/google", h.GoogleRedirect)
+		auth.GET("/google/callback", h.GoogleCallback)
 	}
 }
 

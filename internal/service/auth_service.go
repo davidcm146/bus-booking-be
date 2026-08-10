@@ -10,5 +10,6 @@ import (
 type AuthService interface {
 	Signup(ctx context.Context, req request.SignupRequest) (*response.SignupResponse, error)
 	Login(ctx context.Context, req request.LoginRequest) (*response.LoginResponse, error)
+	GoogleOAuth(ctx context.Context, code string) (*response.LoginResponse, error)
 	Me(ctx context.Context) (*response.UserResponse, error)
 }
