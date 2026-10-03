@@ -22,10 +22,10 @@ type UserResponse struct {
 func ToUserResponse(u *model.User) UserResponse {
 	return UserResponse{
 		ID:        u.ID,
-		Name:      u.FullName,
-		Email:     u.Email,
-		Phone:     u.Phone,
-		Role:      u.Role,
+		Name:      u.Name,
+		Email:     deref(u.Email),
+		Phone:     deref(u.Phone),
+		Role:      u.RoleName(),
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 	}
@@ -38,4 +38,11 @@ func ToUserResponses(users []model.User) []UserResponse {
 		responses[i] = ToUserResponse(&u)
 	}
 	return responses
+}
+
+func deref(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

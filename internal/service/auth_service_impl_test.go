@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/davidcm146/bus-booking-be/configs"
 	"github.com/davidcm146/bus-booking-be/internal/dto/request"
@@ -10,6 +11,7 @@ import (
 	"github.com/davidcm146/bus-booking-be/internal/model"
 	"github.com/davidcm146/bus-booking-be/internal/shared/apperror"
 	"github.com/davidcm146/bus-booking-be/internal/shared/auth"
+	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	"github.com/davidcm146/bus-booking-be/internal/utils"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -21,9 +23,11 @@ const testPassword = "Testpass1dummy"
 const wrongPassword = "Wrongpass1dummy"
 
 func newAuthSvc(repo *mocks.MockUserRepository) *AuthServiceImpl {
-	return NewAuthService(repo, configs.JWTConfig{
+	roles := new(mocks.MockRoleRepository)
+	roles.On("FindByName", mock.Anything, model.RolePassenger).Return(passengerRole, nil)
+	return NewAuthService(repo, roles, configs.JWTConfig{
 		Secret:    "test-secret",
-		ExpiresIn: 0,
+		ExpiresIn: time.Hour,
 	})
 }
 
@@ -32,8 +36,9 @@ func TestSignup(t *testing.T) {
 		repo := new(mocks.MockUserRepository)
 		svc := newAuthSvc(repo)
 
-		repo.On("FindByPhone", mock.Anything, "+84901234567").Return(nil, apperror.NotFound("user.not_found"))
-		repo.On("Create", mock.Anything, mock.AnythingOfType("*model.User")).Return(nil)
+		repo.On("Create", mock.Anything, mock.MatchedBy(func(u *model.User) bool {
+			return *u.Phone == "+84901234567" && *u.RoleID == passengerRole.ID && u.Status == model.UserStatusActive
+		})).Return(nil)
 
 		resp, err := svc.Signup(context.Background(), request.SignupRequest{
 			Phone:    "+84901234567",
@@ -44,6 +49,10 @@ func TestSignup(t *testing.T) {
 		require.NotNil(t, resp)
 		require.NotEmpty(t, resp.Token)
 		require.Equal(t, "+84901234567", resp.Phone)
+		require.Equal(t, model.RolePassenger, resp.Role)
+		claims, err := utils.ParseToken(resp.Token, "test-secret")
+		require.NoError(t, err)
+		require.Equal(t, string(model.RolePassenger), claims.Role)
 		repo.AssertExpectations(t)
 	})
 
@@ -51,8 +60,7 @@ func TestSignup(t *testing.T) {
 		repo := new(mocks.MockUserRepository)
 		svc := newAuthSvc(repo)
 
-		existing := &model.User{ID: 1, Phone: "+84901234567"}
-		repo.On("FindByPhone", mock.Anything, "+84901234567").Return(existing, nil)
+		repo.On("Create", mock.Anything, mock.Anything).Return(apperror.Conflict(i18n.KeyUserPhoneConflict))
 
 		resp, err := svc.Signup(context.Background(), request.SignupRequest{
 			Phone:    "+84901234567",
@@ -64,7 +72,6 @@ func TestSignup(t *testing.T) {
 		appErr, ok := err.(*apperror.AppError)
 		require.True(t, ok)
 		require.Equal(t, 409, appErr.HTTPStatus)
-		repo.AssertNotCalled(t, "Create")
 	})
 }
 
@@ -76,7 +83,7 @@ func TestLogin(t *testing.T) {
 		repo := new(mocks.MockUserRepository)
 		svc := newAuthSvc(repo)
 
-		user := &model.User{ID: 5, Phone: "+84901234567", Password: hashed}
+		user := &model.User{ID: 5, Phone: new("+84901234567"), Password: hashed, Role: passengerRole}
 		repo.On("FindByPhone", mock.Anything, "+84901234567").Return(user, nil)
 
 		resp, err := svc.Login(context.Background(), request.LoginRequest{
@@ -94,7 +101,7 @@ func TestLogin(t *testing.T) {
 		repo := new(mocks.MockUserRepository)
 		svc := newAuthSvc(repo)
 
-		repo.On("FindByPhone", mock.Anything, "+84900000000").Return(nil, apperror.NotFound("user.not_found"))
+		repo.On("FindByPhone", mock.Anything, "+84900000000").Return(nil, apperror.NotFound(i18n.KeyUserNotFound))
 
 		resp, err := svc.Login(context.Background(), request.LoginRequest{
 			Phone:    "+84900000000",
@@ -112,7 +119,7 @@ func TestLogin(t *testing.T) {
 		repo := new(mocks.MockUserRepository)
 		svc := newAuthSvc(repo)
 
-		user := &model.User{ID: 5, Phone: "+84901234567", Password: hashed}
+		user := &model.User{ID: 5, Phone: new("+84901234567"), Password: hashed, Role: passengerRole}
 		repo.On("FindByPhone", mock.Anything, "+84901234567").Return(user, nil)
 
 		resp, err := svc.Login(context.Background(), request.LoginRequest{
@@ -133,7 +140,7 @@ func TestMe(t *testing.T) {
 		repo := new(mocks.MockUserRepository)
 		svc := newAuthSvc(repo)
 
-		user := &model.User{ID: 7, Phone: "+84901234567"}
+		user := &model.User{ID: 7, Phone: new("+84901234567")}
 		repo.On("FindByID", mock.Anything, 7).Return(user, nil)
 
 		ctx := auth.WithContext(context.Background(), &auth.Context{UserID: 7, Role: "passenger"})
@@ -143,6 +150,22 @@ func TestMe(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		require.Equal(t, 7, resp.ID)
+	})
+
+	t.Run("deleted or missing user is not found", func(t *testing.T) {
+		repo := new(mocks.MockUserRepository)
+		svc := newAuthSvc(repo)
+
+		repo.On("FindByID", mock.Anything, 7).Return(nil, apperror.NotFound(i18n.KeyUserNotFound))
+
+		ctx := auth.WithContext(context.Background(), &auth.Context{UserID: 7, Role: "passenger"})
+
+		resp, err := svc.Me(ctx)
+
+		require.Nil(t, resp)
+		appErr, ok := err.(*apperror.AppError)
+		require.True(t, ok)
+		require.Equal(t, 404, appErr.HTTPStatus)
 	})
 
 	t.Run("no auth context", func(t *testing.T) {

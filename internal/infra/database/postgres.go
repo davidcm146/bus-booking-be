@@ -4,12 +4,12 @@ import (
 	"database/sql"
 
 	"github.com/davidcm146/bus-booking-be/configs"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func NewPostgres(cfg configs.DatabaseConfig) (*sql.DB, error) {
 
-	db, err := sql.Open("postgres", cfg.DSN())
+	db, err := sql.Open("pgx", cfg.DSN())
 	if err != nil {
 		return nil, err
 	}

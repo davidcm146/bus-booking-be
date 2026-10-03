@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/davidcm146/bus-booking-be/internal/shared/constant"
+	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 )
 
 // AppError represents a structured application error with an HTTP status code.
@@ -11,7 +12,7 @@ import (
 type AppError struct {
 	Code       string          `json:"code"`
 	MessageKey constant.MsgKey `json:"-"`
-	HTTPStatus int             `json:"-"`
+	HTTPStatus int             `json:"status"`
 }
 
 // Error returns the message key as a string fallback (useful for logging).
@@ -31,12 +32,12 @@ func New(code string, key constant.MsgKey, httpStatus int) *AppError {
 // --- Predefined sentinel errors ---
 
 var (
-	ErrNotFound     = New("NOT_FOUND", constant.MsgKeyResourceNotFound, http.StatusNotFound)
-	ErrBadRequest   = New("BAD_REQUEST", constant.MsgKeyBadRequest, http.StatusBadRequest)
-	ErrInternal     = New("INTERNAL_ERROR", constant.MsgKeyInternalError, http.StatusInternalServerError)
-	ErrConflict     = New("CONFLICT", constant.MsgKeyResourceConflict, http.StatusConflict)
-	ErrUnauthorized = New("UNAUTHORIZED", constant.MsgKeyUnauthorized, http.StatusUnauthorized)
-	ErrForbidden    = New("FORBIDDEN", constant.MsgKeyForbidden, http.StatusForbidden)
+	ErrNotFound     = New(constant.CodeNotFoundError, i18n.KeyErrorResourceNotFound, http.StatusNotFound)
+	ErrBadRequest   = New(constant.CodeBadRequestError, i18n.KeyErrorBadRequest, http.StatusBadRequest)
+	ErrInternal     = New(constant.CodeInternalError, i18n.KeyErrorInternal, http.StatusInternalServerError)
+	ErrConflict     = New(constant.CodeConflictError, i18n.KeyErrorResourceConflict, http.StatusConflict)
+	ErrUnauthorized = New(constant.CodeUnauthorized, i18n.KeyErrorUnauthorized, http.StatusUnauthorized)
+	ErrForbidden    = New(constant.CodeForbidden, i18n.KeyErrorForbidden, http.StatusForbidden)
 )
 
 // --- Convenience constructors that customize the message key ---

@@ -27,18 +27,15 @@ type Application struct {
 // New bootstraps the entire application: config → DB → DI container → router.
 func New() (*Application, error) {
 	cfg := configs.Load()
+	if cfg.JWT.Secret == "" {
+		return nil, fmt.Errorf("JWT_SECRET is required")
+	}
 
 	log := logger.New(cfg.App.Environment)
 	slog.SetDefault(log)
 
-	slog.Info("Initializing i18n service...")
-	i18nService, err := i18n.New()
-	if err != nil {
-		return nil, fmt.Errorf("i18n initialization failed: %w", err)
-	}
-	i18n.Setup(i18nService)
-
 	slog.Info("Connecting to database...")
+	i18n.Init()
 
 	sqlDB, err := database.NewPostgres(cfg.Database)
 	if err != nil {
@@ -56,7 +53,7 @@ func New() (*Application, error) {
 
 	container := NewContainer(gormDB, cfg)
 
-	r := router.New(container.Handlers(), i18nService, cfg.JWT.Secret)
+	r := router.New(container.Handlers(), cfg.JWT.Secret)
 
 	return &Application{
 		Config: cfg,

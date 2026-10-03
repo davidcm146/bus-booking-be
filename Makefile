@@ -41,6 +41,12 @@ migrate-down-to:
 migrate-status:
 	goose -dir migrations postgres "$(DATABASE_URL)" status
 
-# DATABASE SEED (re-applies the seed migration)
+migrate-reset:
+	goose -dir migrations postgres "$(DATABASE_URL)" reset
+
+# DATABASE SEEDS
+seed-create:
+	touch internal/seeds/$$(date +%Y%m%d%H%M%S)_$(name).sql
+
 seed:
-	goose -dir migrations postgres "$(DATABASE_URL)" redo
+	psql "$(DATABASE_URL)" -f seeds/$(file).sql

@@ -5,7 +5,6 @@ import (
 
 	"github.com/davidcm146/bus-booking-be/internal/dto/request"
 	"github.com/davidcm146/bus-booking-be/internal/service"
-	"github.com/davidcm146/bus-booking-be/internal/shared/constant"
 	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	"github.com/davidcm146/bus-booking-be/internal/shared/response"
 	"github.com/davidcm146/bus-booking-be/internal/shared/validator"
@@ -59,7 +58,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 func (h *UserHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		response.ValidationError(c, i18n.T(c.Request.Context(), constant.MsgKeyInvalidIDFormat))
+		response.ValidationError(c, i18n.T(c.Request.Context(), string(i18n.KeyErrorInvalidIDFormat), nil))
 		return
 	}
 
@@ -103,7 +102,7 @@ func (h *UserHandler) GetAll(c *gin.Context) {
 func (h *UserHandler) Update(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		response.ValidationError(c, i18n.T(c.Request.Context(), constant.MsgKeyInvalidIDFormat))
+		response.ValidationError(c, i18n.T(c.Request.Context(), string(i18n.KeyErrorInvalidIDFormat), nil))
 		return
 	}
 
@@ -132,7 +131,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 func (h *UserHandler) Delete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		response.ValidationError(c, i18n.T(c.Request.Context(), constant.MsgKeyInvalidIDFormat))
+		response.ValidationError(c, i18n.T(c.Request.Context(), string(i18n.KeyErrorInvalidIDFormat), nil))
 		return
 	}
 

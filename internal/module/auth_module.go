@@ -13,8 +13,7 @@ type AuthModule struct {
 }
 
 func NewAuthModule(db *gorm.DB, jwtCfg configs.JWTConfig) *AuthModule {
-	repo := repository.NewUserRepository(db)
-	svc := service.NewAuthService(repo, jwtCfg)
+	svc := service.NewAuthService(repository.NewUserRepository(db), repository.NewRoleRepository(db), jwtCfg)
 	return &AuthModule{
 		Handler: handler.NewAuthHandler(svc),
 	}

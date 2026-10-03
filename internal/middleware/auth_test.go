@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davidcm146/bus-booking-be/internal/model"
 	"github.com/davidcm146/bus-booking-be/internal/shared/auth"
 	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	"github.com/davidcm146/bus-booking-be/internal/utils"
@@ -17,11 +18,7 @@ const mwSecret = "mw-test-secret"
 
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
-	i18nSvc, err := i18n.New()
-	if err != nil {
-		panic("failed to init i18n for tests: " + err.Error())
-	}
-	i18n.Setup(i18nSvc)
+	i18n.Init()
 	m.Run()
 }
 
@@ -98,4 +95,51 @@ func TestAuthMiddleware_SetsAuthContext(t *testing.T) {
 	r.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestRequireRole(t *testing.T) {
+	adminToken, err := utils.GenerateToken(1, "admin", mwSecret, time.Hour)
+	require.NoError(t, err)
+	passengerToken, err := utils.GenerateToken(2, "passenger", mwSecret, time.Hour)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name       string
+		authHeader string
+		wantStatus int
+	}{
+		{"allowed role", "Bearer " + adminToken, http.StatusOK},
+		{"other role is forbidden", "Bearer " + passengerToken, http.StatusForbidden},
+		{"no token is unauthorized", "", http.StatusUnauthorized},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			r := gin.New()
+			r.GET("/admin", AuthMiddleware(mwSecret), RequireRole(model.RoleAdmin), func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"ok": true})
+			})
+
+			req := httptest.NewRequest(http.MethodGet, "/admin", nil)
+			if tt.authHeader != "" {
+				req.Header.Set("Authorization", tt.authHeader)
+			}
+			rec := httptest.NewRecorder()
+			r.ServeHTTP(rec, req)
+
+			require.Equal(t, tt.wantStatus, rec.Code)
+		})
+	}
+}
+
+func TestRequireRole_WithoutAuthMiddleware(t *testing.T) {
+	r := gin.New()
+	r.GET("/admin", RequireRole(model.RoleAdmin), func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"ok": true})
+	})
+
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin", nil))
+
+	require.Equal(t, http.StatusUnauthorized, rec.Code)
 }

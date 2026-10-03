@@ -237,15 +237,18 @@ END $$;
 
 -- ─── Users ────────────────────────────────────────────────────────────────
 -- Demo users: password is "password123" (bcrypt hash below). Not a real secret.
-INSERT INTO users (id, full_name, email, phone, role_id, operator_id, role, password, language, status) VALUES
-  (1, 'Phương Trang Operations', 'operator@busgo.app', '+84900000010', 2, 1, 'operator',
+INSERT INTO users (id, full_name, email, phone, role_id, operator_id, password, language, status) VALUES
+  (1, 'Phương Trang Operations', 'operator@busgo.app', '+84900000010', 2, 1,
    '$2a$10$2SKxrw75fx1aiHZKIybmF.GlXPp6STVIX6.4ltyOVRigKURMMfDXa', 'vi', 'active')
-ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email, role = EXCLUDED.role;
+ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email, role_id = EXCLUDED.role_id;
 
-INSERT INTO users (id, full_name, email, phone, role_id, role, password, language, status) VALUES
-  (2, 'Nguyen Minh Anh', 'passenger@busgo.app', '+84900000020', 1, 'passenger',
+INSERT INTO users (id, full_name, email, phone, role_id, password, language, status) VALUES
+  (2, 'Nguyen Minh Anh', 'passenger@busgo.app', '+84900000020', 1,
    '$2a$10$2SKxrw75fx1aiHZKIybmF.GlXPp6STVIX6.4ltyOVRigKURMMfDXa', 'vi', 'active')
-ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email, role = EXCLUDED.role;
+ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email, role_id = EXCLUDED.role_id;
+
+-- Explicit ids don't advance the identity sequence; move it past them so app inserts don't collide.
+SELECT setval(pg_get_serial_sequence('users', 'id'), (SELECT max(id) FROM users));
 
 -- +goose Down
 DELETE FROM seat_inventories WHERE trip_id <= 10000;

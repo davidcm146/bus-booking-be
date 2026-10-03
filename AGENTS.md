@@ -33,7 +33,7 @@ make seed
 | Layer | Tests against | Mocks |
 |-------|---------------|-------|
 | `utils` | pure functions | none |
-| `service` | mock repository | `mocks.MockUserRepository` |
+| `service` | mock repository | `mocks.MockUserRepository`, `mocks.MockRoleRepository` |
 | `handler` | mock service | `mocks.MockAuthService`, `mocks.MockUserService` |
 | `middleware` | stub auth context | none |
 | `repository` | live Postgres | none |

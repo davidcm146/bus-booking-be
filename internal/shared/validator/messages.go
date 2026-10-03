@@ -3,27 +3,28 @@ package validator
 import (
 	"context"
 
-	"github.com/davidcm146/bus-booking-be/internal/shared/constant"
 	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 )
 
-// Return localized error message for the given validator tag.
+// GetMessage trả về message lỗi validate đã dịch, với Field và Param được điền qua template.
 func GetMessage(ctx context.Context, tag, field, param string) string {
-	// Check custom validator messages first
-	if key, found := customMessages[tag]; found {
-		return i18n.T(ctx, key, field)
+	key := "validator." + tag
+	if messageKey, ok := customMessages[tag]; ok {
+		key = string(messageKey)
 	}
 
-	// Standard validator tag → construct key dynamically (e.g. "validator.required")
-	key := constant.MsgKey("validator." + tag)
-
-	// Check if this key has a translation; if not, use the fallback
-	if !i18n.HasKey(key) {
-		return i18n.T(ctx, constant.MsgKeyFallback, field, tag)
+	data := map[string]interface{}{
+		"Field": field,
+		"Param": param,
 	}
 
-	if param != "" {
-		return i18n.T(ctx, key, field, param)
+	msg := i18n.T(ctx, key, data)
+	if msg == key {
+		return i18n.T(ctx, "validator.fallback", map[string]interface{}{
+			"Field": field,
+			"Tag":   tag,
+		})
 	}
-	return i18n.T(ctx, key, field)
+
+	return msg
 }

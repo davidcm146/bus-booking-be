@@ -24,11 +24,7 @@ import (
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
 
-	i18nSvc, err := i18n.New()
-	if err != nil {
-		panic("failed to init i18n for tests: " + err.Error())
-	}
-	i18n.Setup(i18nSvc)
+	i18n.Init()
 	validator.Setup()
 
 	m.Run()

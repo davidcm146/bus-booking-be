@@ -8,6 +8,8 @@ import (
 
 	"github.com/davidcm146/bus-booking-be/internal/model"
 	"github.com/davidcm146/bus-booking-be/internal/shared/apperror"
+	"github.com/davidcm146/bus-booking-be/internal/shared/constant"
+	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -32,51 +34,107 @@ func newTestDB(t *testing.T) *gorm.DB {
 	return db
 }
 
-// cleanupUsers removes all users matching the given emails so tests
-// don't leak data into each other.
-func cleanupUsers(t *testing.T, db *gorm.DB, emails ...string) {
+// cleanupUsers hard-deletes all users with the given phones once the test
+// finishes so tests don't leak data into each other.
+func cleanupUsers(t *testing.T, db *gorm.DB, phones ...string) {
 	t.Helper()
-	require.NoError(t, db.Where("email IN ?", emails).Delete(&model.User{}).Error)
+	t.Cleanup(func() {
+		require.NoError(t, db.Where("phone IN ?", phones).Delete(&model.User{}).Error)
+	})
+}
+
+func newUser(name, phone string, email *string) *model.User {
+	return &model.User{
+		Name:     name,
+		Email:    email,
+		Phone:    &phone,
+		Password: "hashed",
+		Status:   model.UserStatusActive,
+	}
+}
+
+func requireAppError(t *testing.T, err error, status int, key constant.MsgKey) {
+	t.Helper()
+	appErr, ok := err.(*apperror.AppError)
+	require.True(t, ok, "expected *apperror.AppError, got %T", err)
+	require.Equal(t, status, appErr.HTTPStatus)
+	require.Equal(t, key, appErr.MessageKey)
 }
 
 func TestUserRepository_CreateAndFindByID(t *testing.T) {
 	db := newTestDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
-	email := "test-create@example.com"
-	defer cleanupUsers(t, db, email)
+	phone := "+84911000001"
+	cleanupUsers(t, db, phone)
 
-	user := &model.User{
-		FullName: "Test User",
-		Email:    email,
-		Phone:    "+84900000001",
-		Password: "hashed",
-		Role:     model.RolePassenger,
-	}
+	role, err := NewRoleRepository(db).FindByName(ctx, model.RolePassenger)
+	require.NoError(t, err, "roles reference data missing — run make migrate-up")
 
-	err := repo.Create(ctx, user)
-	require.NoError(t, err)
+	user := newUser("Test User", phone, new("test-create@example.com"))
+	user.RoleID = &role.ID
+	require.NoError(t, repo.Create(ctx, user))
 	require.NotZero(t, user.ID, "Create should set the ID")
+	require.Equal(t, "vi", user.Language, "Create should return the DB default language")
 
 	found, err := repo.FindByID(ctx, user.ID)
 	require.NoError(t, err)
-	require.Equal(t, user.Email, found.Email)
-	require.Equal(t, user.FullName, found.FullName)
+	require.Equal(t, "Test User", found.Name)
+	require.Equal(t, "test-create@example.com", *found.Email)
+	require.Equal(t, model.UserStatusActive, found.Status)
+	require.Equal(t, model.RolePassenger, found.RoleName(), "FindByID should load the role")
+}
+
+func TestUserRepository_Create_WithoutEmail(t *testing.T) {
+	db := newTestDB(t)
+	repo := NewUserRepository(db)
+	ctx := context.Background()
+	phone1, phone2 := "+84911000002", "+84911000003"
+	cleanupUsers(t, db, phone1, phone2)
+
+	// Phone-only signups must store NULL, not '', so they don't collide on the email unique key.
+	require.NoError(t, repo.Create(ctx, newUser("", phone1, nil)))
+	require.NoError(t, repo.Create(ctx, newUser("", phone2, nil)))
+
+	found, err := repo.FindByPhone(ctx, phone2)
+	require.NoError(t, err)
+	require.Nil(t, found.Email)
+}
+
+func TestUserRepository_Create_Conflict(t *testing.T) {
+	db := newTestDB(t)
+	repo := NewUserRepository(db)
+	ctx := context.Background()
+	phone, otherPhone := "+84911000004", "+84911000005"
+	email := "test-conflict@example.com"
+	cleanupUsers(t, db, phone, otherPhone)
+
+	require.NoError(t, repo.Create(ctx, newUser("Existing", phone, &email)))
+
+	tests := []struct {
+		name string
+		user *model.User
+		key  constant.MsgKey
+	}{
+		{"duplicate phone", newUser("Dup", phone, new("other-conflict@example.com")), i18n.KeyUserPhoneConflict},
+		{"duplicate email", newUser("Dup", otherPhone, &email), i18n.KeyUserEmailConflict},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			requireAppError(t, repo.Create(ctx, tt.user), 409, tt.key)
+		})
+	}
 }
 
 func TestUserRepository_FindByEmail(t *testing.T) {
 	db := newTestDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
+	phone := "+84911000006"
 	email := "test-email@example.com"
-	defer cleanupUsers(t, db, email)
+	cleanupUsers(t, db, phone)
 
-	user := &model.User{
-		FullName: "Email Test",
-		Email:    email,
-		Phone:    "+84900000002",
-		Password: "hashed",
-	}
+	user := newUser("Email Test", phone, &email)
 	require.NoError(t, repo.Create(ctx, user))
 
 	found, err := repo.FindByEmail(ctx, email)
@@ -85,33 +143,21 @@ func TestUserRepository_FindByEmail(t *testing.T) {
 }
 
 func TestUserRepository_FindByEmail_NotFound(t *testing.T) {
-	db := newTestDB(t)
-	repo := NewUserRepository(db)
-	ctx := context.Background()
+	repo := NewUserRepository(newTestDB(t))
 
-	found, err := repo.FindByEmail(ctx, "nonexistent@example.com")
+	found, err := repo.FindByEmail(context.Background(), "nonexistent@example.com")
 	require.Nil(t, found)
-	require.Error(t, err)
-
-	appErr, ok := err.(*apperror.AppError)
-	require.True(t, ok)
-	require.Equal(t, 404, appErr.HTTPStatus)
+	requireAppError(t, err, 404, i18n.KeyUserNotFound)
 }
 
 func TestUserRepository_FindByPhone(t *testing.T) {
 	db := newTestDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
-	email := "test-phone@example.com"
-	phone := "+84900000003"
-	defer cleanupUsers(t, db, email)
+	phone := "+84911000007"
+	cleanupUsers(t, db, phone)
 
-	user := &model.User{
-		FullName: "Phone Test",
-		Email:    email,
-		Phone:    phone,
-		Password: "hashed",
-	}
+	user := newUser("Phone Test", phone, nil)
 	require.NoError(t, repo.Create(ctx, user))
 
 	found, err := repo.FindByPhone(ctx, phone)
@@ -119,81 +165,89 @@ func TestUserRepository_FindByPhone(t *testing.T) {
 	require.Equal(t, user.ID, found.ID)
 }
 
-func TestUserRepository_FindAll(t *testing.T) {
+func TestUserRepository_FindAll_ExcludesDeleted(t *testing.T) {
 	db := newTestDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
-	email1 := "test-findall-1@example.com"
-	email2 := "test-findall-2@example.com"
-	defer cleanupUsers(t, db, email1, email2)
+	phone1, phone2 := "+84911000008", "+84911000009"
+	cleanupUsers(t, db, phone1, phone2)
 
-	require.NoError(t, repo.Create(ctx, &model.User{
-		FullName: "User 1", Email: email1, Phone: "+84900000004", Password: "h",
-	}))
-	require.NoError(t, repo.Create(ctx, &model.User{
-		FullName: "User 2", Email: email2, Phone: "+84900000005", Password: "h",
-	}))
+	kept, gone := newUser("Kept", phone1, nil), newUser("Gone", phone2, nil)
+	require.NoError(t, repo.Create(ctx, kept))
+	require.NoError(t, repo.Create(ctx, gone))
+	require.NoError(t, repo.Delete(ctx, gone.ID))
 
 	users, err := repo.FindAll(ctx)
 	require.NoError(t, err)
-	require.GreaterOrEqual(t, len(users), 2)
+
+	ids := make([]int, len(users))
+	for i, u := range users {
+		ids[i] = u.ID
+	}
+	require.Contains(t, ids, kept.ID)
+	require.NotContains(t, ids, gone.ID)
 }
 
 func TestUserRepository_Update(t *testing.T) {
 	db := newTestDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
-	email := "test-update@example.com"
-	defer cleanupUsers(t, db, email)
+	phone, otherPhone := "+84911000010", "+84911000011"
+	cleanupUsers(t, db, phone, otherPhone)
 
-	user := &model.User{
-		FullName: "Original",
-		Email:    email,
-		Phone:    "+84900000006",
-		Password: "hashed",
-	}
+	user := newUser("Original", phone, new("test-update@example.com"))
+	other := newUser("Other", otherPhone, new("test-update-other@example.com"))
 	require.NoError(t, repo.Create(ctx, user))
+	require.NoError(t, repo.Create(ctx, other))
 
-	user.FullName = "Updated"
-	require.NoError(t, repo.Update(ctx, user))
+	t.Run("updates fields", func(t *testing.T) {
+		user.Name = "Updated"
+		require.NoError(t, repo.Update(ctx, user))
 
-	found, err := repo.FindByID(ctx, user.ID)
-	require.NoError(t, err)
-	require.Equal(t, "Updated", found.FullName)
+		found, err := repo.FindByID(ctx, user.ID)
+		require.NoError(t, err)
+		require.Equal(t, "Updated", found.Name)
+	})
+
+	t.Run("email taken by another user is a conflict", func(t *testing.T) {
+		dup := *other
+		dup.Email = user.Email
+		requireAppError(t, repo.Update(ctx, &dup), 409, i18n.KeyUserEmailConflict)
+	})
+
+	t.Run("deleted user is not found", func(t *testing.T) {
+		require.NoError(t, repo.Delete(ctx, other.ID))
+		other.Name = "Ghost"
+		requireAppError(t, repo.Update(ctx, other), 404, i18n.KeyUserNotFound)
+	})
 }
 
-func TestUserRepository_Delete(t *testing.T) {
+func TestUserRepository_Delete_IsSoft(t *testing.T) {
 	db := newTestDB(t)
 	repo := NewUserRepository(db)
 	ctx := context.Background()
-	email := "test-delete@example.com"
-	defer cleanupUsers(t, db, email)
+	phone := "+84911000012"
+	cleanupUsers(t, db, phone)
 
-	user := &model.User{
-		FullName: "Delete Me",
-		Email:    email,
-		Phone:    "+84900000007",
-		Password: "hashed",
-	}
+	user := newUser("Delete Me", phone, nil)
 	require.NoError(t, repo.Create(ctx, user))
-
 	require.NoError(t, repo.Delete(ctx, user.ID))
 
 	_, err := repo.FindByID(ctx, user.ID)
-	require.Error(t, err)
+	requireAppError(t, err, 404, i18n.KeyUserNotFound)
+
+	var row model.User
+	require.NoError(t, db.First(&row, "id = ?", user.ID).Error, "row should still exist")
+	require.True(t, row.Deleted)
+	require.NotNil(t, row.DeletedAt)
+
+	requireAppError(t, repo.Delete(ctx, user.ID), 404, i18n.KeyUserNotFound)
 }
 
 func TestUserRepository_Delete_NotFound(t *testing.T) {
-	db := newTestDB(t)
-	repo := NewUserRepository(db)
-	ctx := context.Background()
+	repo := NewUserRepository(newTestDB(t))
 
-	err := repo.Delete(ctx, 999999)
-	require.Error(t, err)
-
-	appErr, ok := err.(*apperror.AppError)
-	require.True(t, ok)
-	require.Equal(t, 404, appErr.HTTPStatus)
+	requireAppError(t, repo.Delete(context.Background(), 999999), 404, i18n.KeyUserNotFound)
 }
 
 func TestMain(m *testing.M) {
@@ -204,21 +258,5 @@ func TestMain(m *testing.M) {
 		os.Exit(0)
 	}
 
-	// The goose migration creates `role_id integer` (normalized FK to
-	// roles), but the GORM model uses `Role` as a denormalized varchar
-	// column — the app code treats Role as a string everywhere. Add the
-	// column the model expects so repository tests can run against the
-	// real DB. This is a model/migration mismatch that should be reconciled.
-	db, err := gorm.Open(postgres.Open(dsn()), &gorm.Config{})
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to connect to test DB:", err)
-		os.Exit(1)
-	}
-	db.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS role varchar(20) NOT NULL DEFAULT 'passenger'")
-	// The migration has `status varchar(30) NOT NULL` with no default, but
-	// the model has no Status field. Set a default so INSERTs don't fail.
-	db.Exec("ALTER TABLE users ALTER COLUMN status SET DEFAULT 'active'")
-
-	code := m.Run()
-	os.Exit(code)
+	os.Exit(m.Run())
 }
