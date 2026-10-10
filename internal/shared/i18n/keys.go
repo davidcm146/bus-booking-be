@@ -1,6 +1,9 @@
 package i18n
 
 const (
+	KeyErrorInvalidReference = "error.invalid_reference"
+	KeyErrorInvalidData      = "error.invalid_data"
+
 	KeyErrorResourceNotFound = "error.resource_not_found"
 	KeyErrorBadRequest       = "error.bad_request"
 	KeyErrorInternal         = "error.internal"
@@ -29,6 +32,10 @@ const (
 
 	KeyRoleNotFound   = "role.not_found"
 	KeyRoleFailedFind = "role.failed_find"
+
+	KeyTripNotFound    = "trip.not_found"
+	KeyTripFailedFind  = "trip.failed_find"
+	KeyTripFailedFetch = "trip.failed_fetch"
 
 	KeyValidatorPhone          = "validator.phone"
 	KeyValidatorStrongPassword = "validator.strong_password"

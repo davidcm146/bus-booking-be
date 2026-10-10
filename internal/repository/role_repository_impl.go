@@ -6,6 +6,7 @@ import (
 
 	"github.com/davidcm146/bus-booking-be/internal/model"
 	"github.com/davidcm146/bus-booking-be/internal/shared/apperror"
+	"github.com/davidcm146/bus-booking-be/internal/shared/dberror"
 	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	"gorm.io/gorm"
 )
@@ -26,7 +27,7 @@ func (r *roleRepositoryImpl) FindByName(ctx context.Context, name model.UserRole
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, apperror.NotFound(i18n.KeyRoleNotFound)
 		}
-		return nil, apperror.Internal(i18n.KeyRoleFailedFind)
+		return nil, dberror.Translate(err, i18n.KeyRoleFailedFind)
 	}
 	return &role, nil
 }

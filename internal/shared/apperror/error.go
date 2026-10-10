@@ -7,16 +7,31 @@ import (
 	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 )
 
-// AppError represents a structured application error with an HTTP status code.
-// MessageKey stores an i18n key; translation is performed at the response boundary.
 type AppError struct {
 	Code       string          `json:"code"`
 	MessageKey constant.MsgKey `json:"-"`
 	HTTPStatus int             `json:"status"`
+	cause      error
 }
 
-// Error returns the message key as a string fallback (useful for logging).
+// WithCause returns a copy of the error with the underlying cause attached.
+// Returning a copy keeps shared sentinels (ErrNotFound, ...) immutable.
+func (e *AppError) WithCause(err error) *AppError {
+	clone := *e
+	clone.cause = err
+	return &clone
+}
+
+// Unwrap lets errors.Is / errors.As reach the underlying cause.
+func (e *AppError) Unwrap() error {
+	return e.cause
+}
+
+// Error returns the message key, plus the cause when present (for logging).
 func (e *AppError) Error() string {
+	if e.cause != nil {
+		return string(e.MessageKey) + ": " + e.cause.Error()
+	}
 	return string(e.MessageKey)
 }
 

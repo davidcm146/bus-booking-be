@@ -33,8 +33,8 @@ make seed
 | Layer | Tests against | Mocks |
 |-------|---------------|-------|
 | `utils` | pure functions | none |
-| `service` | mock repository | `mocks.MockUserRepository`, `mocks.MockRoleRepository` |
-| `handler` | mock service | `mocks.MockAuthService`, `mocks.MockUserService` |
+| `service` | mock repository | `mocks.MockUserRepository`, `mocks.MockRoleRepository`, `mocks.MockTripRepository` |
+| `handler` | mock service | `mocks.MockAuthService`, `mocks.MockUserService`, `mocks.MockTripService` |
 | `middleware` | stub auth context | none |
 | `repository` | live Postgres | none |
 | `shared/i18n` | embedded locale files | none |

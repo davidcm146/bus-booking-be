@@ -2,8 +2,8 @@ package validator
 
 import (
 	"context"
-	"unicode"
 
+	"github.com/davidcm146/bus-booking-be/internal/utils"
 	"github.com/gin-gonic/gin/binding"
 	govalidator "github.com/go-playground/validator/v10"
 )
@@ -40,19 +40,9 @@ func FormatError(ctx context.Context, err error) []FieldError {
 	fieldErrors := make([]FieldError, 0, len(errs))
 	for _, fe := range errs {
 		fieldErrors = append(fieldErrors, FieldError{
-			Field:   toCamelCase(fe.Field()),
+			Field:   utils.ToCamelCase(fe.Field()),
 			Message: GetMessage(ctx, fe.Tag(), fe.Field(), fe.Param()),
 		})
 	}
 	return fieldErrors
-}
-
-func toCamelCase(s string) string {
-	if s == "" {
-		return s
-	}
-
-	runes := []rune(s)
-	runes[0] = unicode.ToLower(runes[0])
-	return string(runes)
 }

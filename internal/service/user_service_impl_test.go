@@ -36,14 +36,14 @@ func TestCreateUser(t *testing.T) {
 		})).Return(nil)
 
 		resp, err := svc.CreateUser(context.Background(), request.CreateUserRequest{
-			Name:     "Bob",
+			FullName: "Bob",
 			Email:    "bob@example.com",
 			Password: "password123",
 		})
 
 		require.NoError(t, err)
 		require.NotNil(t, resp)
-		require.Equal(t, "Bob", resp.Name)
+		require.Equal(t, "Bob", resp.FullName)
 		require.Equal(t, "bob@example.com", resp.Email)
 		require.Equal(t, model.RolePassenger, resp.Role)
 		repo.AssertExpectations(t)
@@ -56,7 +56,7 @@ func TestCreateUser(t *testing.T) {
 		repo.On("Create", mock.Anything, mock.Anything).Return(apperror.Conflict(i18n.KeyUserEmailConflict))
 
 		resp, err := svc.CreateUser(context.Background(), request.CreateUserRequest{
-			Name:     "Bob",
+			FullName: "Bob",
 			Email:    "bob@example.com",
 			Password: "password123",
 		})
@@ -76,7 +76,7 @@ func TestCreateUser(t *testing.T) {
 		})).Return(nil)
 
 		resp, err := svc.CreateUser(context.Background(), request.CreateUserRequest{
-			Name:     "Op",
+			FullName: "Op",
 			Email:    "op@example.com",
 			Password: "password123",
 			Role:     "operator",
@@ -92,7 +92,7 @@ func TestCreateUser(t *testing.T) {
 		roles.On("FindByName", mock.Anything, model.RolePassenger).Return(nil, apperror.Internal(i18n.KeyRoleFailedFind))
 
 		resp, err := svc.CreateUser(context.Background(), request.CreateUserRequest{
-			Name:     "Bob",
+			FullName: "Bob",
 			Email:    "bob@example.com",
 			Password: "password123",
 		})
@@ -107,14 +107,14 @@ func TestGetUserByID(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		svc, repo, _ := newUserSvc()
 
-		user := &model.User{ID: 3, Name: "Alice", Email: new("alice@example.com")}
+		user := &model.User{ID: 3, FullName: "Alice", Email: new("alice@example.com")}
 		repo.On("FindByID", mock.Anything, 3).Return(user, nil)
 
 		resp, err := svc.GetUserByID(context.Background(), 3)
 
 		require.NoError(t, err)
 		require.Equal(t, 3, resp.ID)
-		require.Equal(t, "Alice", resp.Name)
+		require.Equal(t, "Alice", resp.FullName)
 	})
 
 	t.Run("not found", func(t *testing.T) {
@@ -133,8 +133,8 @@ func TestGetAllUsers(t *testing.T) {
 	svc, repo, _ := newUserSvc()
 
 	users := []model.User{
-		{ID: 1, Name: "A", Email: new("a@example.com")},
-		{ID: 2, Name: "B", Email: new("b@example.com")},
+		{ID: 1, FullName: "A", Email: new("a@example.com")},
+		{ID: 2, FullName: "B", Email: new("b@example.com")},
 	}
 	repo.On("FindAll", mock.Anything).Return(users, nil)
 
@@ -142,30 +142,30 @@ func TestGetAllUsers(t *testing.T) {
 
 	require.NoError(t, err)
 	require.Len(t, resp, 2)
-	require.Equal(t, "A", resp[0].Name)
+	require.Equal(t, "A", resp[0].FullName)
 }
 
 func TestUpdateUser(t *testing.T) {
 	t.Run("name change only", func(t *testing.T) {
 		svc, repo, _ := newUserSvc()
 
-		user := &model.User{ID: 1, Name: "Old", Email: new("old@example.com")}
+		user := &model.User{ID: 1, FullName: "Old", Email: new("old@example.com")}
 		repo.On("FindByID", mock.Anything, 1).Return(user, nil)
 		repo.On("Update", mock.Anything, mock.AnythingOfType("*model.User")).Return(nil)
 
 		resp, err := svc.UpdateUser(context.Background(), 1, request.UpdateUserRequest{
-			Name: "New",
+			FullName: "New",
 		})
 
 		require.NoError(t, err)
-		require.Equal(t, "New", resp.Name)
+		require.Equal(t, "New", resp.FullName)
 		require.Equal(t, "old@example.com", resp.Email)
 	})
 
 	t.Run("email change", func(t *testing.T) {
 		svc, repo, _ := newUserSvc()
 
-		user := &model.User{ID: 1, Name: "Old", Email: new("old@example.com")}
+		user := &model.User{ID: 1, FullName: "Old", Email: new("old@example.com")}
 		repo.On("FindByID", mock.Anything, 1).Return(user, nil)
 		repo.On("Update", mock.Anything, mock.MatchedBy(func(u *model.User) bool {
 			return *u.Email == "new@example.com"
@@ -182,7 +182,7 @@ func TestUpdateUser(t *testing.T) {
 	t.Run("email conflict from repository is returned", func(t *testing.T) {
 		svc, repo, _ := newUserSvc()
 
-		user := &model.User{ID: 1, Name: "Old", Email: new("old@example.com")}
+		user := &model.User{ID: 1, FullName: "Old", Email: new("old@example.com")}
 		repo.On("FindByID", mock.Anything, 1).Return(user, nil)
 		repo.On("Update", mock.Anything, mock.Anything).Return(apperror.Conflict(i18n.KeyUserEmailConflict))
 
@@ -199,7 +199,7 @@ func TestUpdateUser(t *testing.T) {
 	t.Run("role change resolves role id", func(t *testing.T) {
 		svc, repo, roles := newUserSvc()
 
-		user := &model.User{ID: 1, Name: "Old", RoleID: &passengerRole.ID, Role: passengerRole}
+		user := &model.User{ID: 1, FullName: "Old", RoleID: &passengerRole.ID, Role: passengerRole}
 		repo.On("FindByID", mock.Anything, 1).Return(user, nil)
 		roles.On("FindByName", mock.Anything, model.RoleOperator).Return(operatorRole, nil)
 		repo.On("Update", mock.Anything, mock.MatchedBy(func(u *model.User) bool {

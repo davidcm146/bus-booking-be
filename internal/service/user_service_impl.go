@@ -39,18 +39,15 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 	}
 
 	user := &model.User{
-		Name:     req.Name,
+		FullName: req.FullName,
 		Email:    &req.Email,
+		Phone:    &req.Phone,
 		Password: hashedPassword,
 		RoleID:   &role.ID,
 		Role:     role,
 		Status:   model.UserStatusActive,
 	}
-	if req.Phone != "" {
-		user.Phone = &req.Phone
-	}
 
-	// Email/phone uniqueness is enforced by the DB; the repository maps violations to 409.
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, err
 	}
@@ -85,8 +82,8 @@ func (s *userServiceImpl) UpdateUser(ctx context.Context, id int, req request.Up
 	}
 
 	// Apply partial updates
-	if req.Name != "" {
-		user.Name = req.Name
+	if req.FullName != "" {
+		user.FullName = req.FullName
 	}
 	if req.Email != "" {
 		user.Email = &req.Email

@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/davidcm146/bus-booking-be/internal/model"
+	"github.com/davidcm146/bus-booking-be/internal/utils"
 )
 
 // UserResponse is the outbound DTO for user data.
 // It never exposes sensitive fields like password.
 type UserResponse struct {
 	ID        int            `json:"id"`
-	Name      string         `json:"name"`
+	FullName  string         `json:"fullName"`
 	Email     string         `json:"email"`
 	Phone     string         `json:"phone"`
 	Role      model.UserRole `json:"role"`
@@ -22,9 +23,9 @@ type UserResponse struct {
 func ToUserResponse(u *model.User) UserResponse {
 	return UserResponse{
 		ID:        u.ID,
-		Name:      u.Name,
-		Email:     deref(u.Email),
-		Phone:     deref(u.Phone),
+		FullName:  u.FullName,
+		Email:     utils.DeferString(u.Email),
+		Phone:     utils.DeferString(u.Phone),
 		Role:      u.RoleName(),
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
@@ -38,11 +39,4 @@ func ToUserResponses(users []model.User) []UserResponse {
 		responses[i] = ToUserResponse(&u)
 	}
 	return responses
-}
-
-func deref(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
 }

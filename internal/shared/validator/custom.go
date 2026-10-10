@@ -75,7 +75,6 @@ func validatePassword(fl govalidator.FieldLevel) bool {
 	return hasUpper && hasLower && hasDigit
 }
 
-// init registers built-in custom validators.
 func init() {
 	RegisterCustom(constant.TagPhone, validatePhone, i18n.KeyValidatorPhone)
 	RegisterCustom(constant.TagStrongPassword, validatePassword, i18n.KeyValidatorStrongPassword)

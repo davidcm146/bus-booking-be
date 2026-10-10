@@ -1,4 +1,6 @@
 error:
+  invalid_reference: "Tham chiếu không hợp lệ"
+  invalid_data: "Dữ liệu không hợp lệ"
   resource_not_found: "Không tìm thấy tài nguyên"
   bad_request: "Yêu cầu không hợp lệ"
   internal: "Lỗi hệ thống"
@@ -30,6 +32,11 @@ user:
 role:
   not_found: "Không tìm thấy vai trò"
   failed_find: "Không thể tìm vai trò"
+
+trip:
+  not_found: "Không tìm thấy chuyến xe"
+  failed_find: "Không thể tìm chuyến xe"
+  failed_fetch: "Không thể tìm kiếm chuyến xe"
 
 validator:
   phone: "%s phải là số điện thoại hợp lệ (9-15 chữ số, có thể bắt đầu bằng +)"

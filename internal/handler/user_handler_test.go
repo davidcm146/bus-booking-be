@@ -33,15 +33,15 @@ func TestUserHandler_Create(t *testing.T) {
 		h := NewUserHandler(svc)
 		r := newUserRouter(h)
 
-		expected := &response.UserResponse{ID: 1, Name: "Bob", Email: "bob@example.com", Role: "passenger"}
+		expected := &response.UserResponse{ID: 1, FullName: "Bob", Email: "bob@example.com", Role: "passenger"}
 		svc.On("CreateUser", mock.Anything, request.CreateUserRequest{
-			Name:     "Bob",
+			FullName: "Bob",
 			Email:    "bob@example.com",
 			Password: "password123",
 		}).Return(expected, nil)
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users", jsonBody(t, request.CreateUserRequest{
-			Name:     "Bob",
+			FullName: "Bob",
 			Email:    "bob@example.com",
 			Password: "password123",
 		}))
@@ -74,7 +74,7 @@ func TestUserHandler_Create(t *testing.T) {
 		svc.On("CreateUser", mock.Anything, mock.Anything).Return(nil, apperror.Conflict("user.email_conflict"))
 
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users", jsonBody(t, request.CreateUserRequest{
-			Name:     "Bob",
+			FullName: "Bob",
 			Email:    "bob@example.com",
 			Password: "password123",
 		}))
@@ -92,7 +92,7 @@ func TestUserHandler_GetByID(t *testing.T) {
 		h := NewUserHandler(svc)
 		r := newUserRouter(h)
 
-		expected := &response.UserResponse{ID: 3, Name: "Alice", Email: "alice@example.com"}
+		expected := &response.UserResponse{ID: 3, FullName: "Alice", Email: "alice@example.com"}
 		svc.On("GetUserByID", mock.Anything, 3).Return(expected, nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/3", nil)
@@ -136,8 +136,8 @@ func TestUserHandler_GetAll(t *testing.T) {
 	r := newUserRouter(h)
 
 	expected := []response.UserResponse{
-		{ID: 1, Name: "A", Email: "a@example.com"},
-		{ID: 2, Name: "B", Email: "b@example.com"},
+		{ID: 1, FullName: "A", Email: "a@example.com"},
+		{ID: 2, FullName: "B", Email: "b@example.com"},
 	}
 	svc.On("GetAllUsers", mock.Anything).Return(expected, nil)
 
@@ -154,13 +154,13 @@ func TestUserHandler_Update(t *testing.T) {
 		h := NewUserHandler(svc)
 		r := newUserRouter(h)
 
-		expected := &response.UserResponse{ID: 1, Name: "New", Email: "old@example.com"}
+		expected := &response.UserResponse{ID: 1, FullName: "New", Email: "old@example.com"}
 		svc.On("UpdateUser", mock.Anything, 1, request.UpdateUserRequest{
-			Name: "New",
+			FullName: "New",
 		}).Return(expected, nil)
 
 		req := httptest.NewRequest(http.MethodPut, "/api/v1/users/1", jsonBody(t, request.UpdateUserRequest{
-			Name: "New",
+			FullName: "New",
 		}))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
@@ -177,7 +177,7 @@ func TestUserHandler_Update(t *testing.T) {
 		svc.On("UpdateUser", mock.Anything, 999, mock.Anything).Return(nil, apperror.NotFound("user.not_found"))
 
 		req := httptest.NewRequest(http.MethodPut, "/api/v1/users/999", jsonBody(t, request.UpdateUserRequest{
-			Name: "New",
+			FullName: "New",
 		}))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()

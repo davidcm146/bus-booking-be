@@ -38,3 +38,24 @@ const (
 	CodeUnauthorized    = "UNAUTHORIZED"
 	CodeForbidden       = "FORBIDDEN"
 )
+
+// --- Business time zone (Vietnam has no DST, so a fixed UTC+7 offset is exact) ---
+const (
+	BusinessTimeZoneName   = "Asia/Ho_Chi_Minh"
+	BusinessTimeZoneOffset = 7 * 60 * 60
+	DateLayout             = "2006-01-02"
+)
+
+// --- Trip search ---
+const (
+	DefaultTripPageSize = 25
+	MaxTripPageSize     = 100
+)
+
+const (
+	PgCodeNotNullViolation    = "23502"
+	PgCodeForeignKeyViolation = "23503"
+	PgCodeUniqueViolation     = "23505"
+	PgCodeCheckViolation      = "23514"
+	PgCodeInvalidText         = "22P02"
+)

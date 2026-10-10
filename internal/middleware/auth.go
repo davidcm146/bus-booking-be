@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"slices"
-	"strings"
 
 	"github.com/davidcm146/bus-booking-be/internal/model"
 	"github.com/davidcm146/bus-booking-be/internal/shared/apperror"
@@ -24,14 +23,14 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 			return
 		}
 
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
+		token, ok := utils.ExtractBearerToken(authHeader)
+		if !ok {
 			response.Error(c, apperror.Unauthorized(i18n.KeyAuthInvalidFormat))
 			c.Abort()
 			return
 		}
 
-		claims, err := utils.ParseToken(parts[1], jwtSecret)
+		claims, err := utils.ParseToken(token, jwtSecret)
 		if err != nil {
 			response.Error(c, apperror.Unauthorized(i18n.KeyAuthInvalidToken))
 			c.Abort()

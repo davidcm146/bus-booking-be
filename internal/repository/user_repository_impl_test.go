@@ -45,7 +45,7 @@ func cleanupUsers(t *testing.T, db *gorm.DB, phones ...string) {
 
 func newUser(name, phone string, email *string) *model.User {
 	return &model.User{
-		Name:     name,
+		FullName: name,
 		Email:    email,
 		Phone:    &phone,
 		Password: "hashed",
@@ -79,7 +79,7 @@ func TestUserRepository_CreateAndFindByID(t *testing.T) {
 
 	found, err := repo.FindByID(ctx, user.ID)
 	require.NoError(t, err)
-	require.Equal(t, "Test User", found.Name)
+	require.Equal(t, "Test User", found.FullName)
 	require.Equal(t, "test-create@example.com", *found.Email)
 	require.Equal(t, model.UserStatusActive, found.Status)
 	require.Equal(t, model.RolePassenger, found.RoleName(), "FindByID should load the role")
@@ -201,12 +201,12 @@ func TestUserRepository_Update(t *testing.T) {
 	require.NoError(t, repo.Create(ctx, other))
 
 	t.Run("updates fields", func(t *testing.T) {
-		user.Name = "Updated"
+		user.FullName = "Updated"
 		require.NoError(t, repo.Update(ctx, user))
 
 		found, err := repo.FindByID(ctx, user.ID)
 		require.NoError(t, err)
-		require.Equal(t, "Updated", found.Name)
+		require.Equal(t, "Updated", found.FullName)
 	})
 
 	t.Run("email taken by another user is a conflict", func(t *testing.T) {
@@ -217,7 +217,7 @@ func TestUserRepository_Update(t *testing.T) {
 
 	t.Run("deleted user is not found", func(t *testing.T) {
 		require.NoError(t, repo.Delete(ctx, other.ID))
-		other.Name = "Ghost"
+		other.FullName = "Ghost"
 		requireAppError(t, repo.Update(ctx, other), 404, i18n.KeyUserNotFound)
 	})
 }

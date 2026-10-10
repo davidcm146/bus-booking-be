@@ -1,4 +1,6 @@
 error:
+  invalid_reference: "Invalid reference"
+  invalid_data: "Invalid data"
   resource_not_found: "Resource not found"
   bad_request: "Bad request"
   internal: "Internal server error"
@@ -6,7 +8,7 @@ error:
   unauthorized: "Unauthorized"
   forbidden: "Forbidden"
   validation_failed: "Validation failed"
-  invalid_id_format: "Invalid user ID format"
+  invalid_id_format: "Invalid ID format"
 
 auth:
   missing_header: "Missing authorization header"
@@ -30,6 +32,11 @@ user:
 role:
   not_found: "Role not found"
   failed_find: "Failed to find role"
+
+trip:
+  not_found: "Trip not found"
+  failed_find: "Failed to find trip"
+  failed_fetch: "Failed to search trips"
 
 validator:
   phone: "{{.Field}} must be a valid phone number (9-15 digits, optional + prefix)"

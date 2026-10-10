@@ -17,20 +17,20 @@ const (
 // User is the core domain entity representing a system user.
 // Fields mirror the users table in migrations/; the migration is the source of truth.
 type User struct {
-	ID         int        `gorm:"primaryKey" json:"id"`
-	Name       string     `json:"name"`
-	Email      *string    `json:"email"`
-	Phone      *string    `json:"phone"`
-	RoleID     *int       `json:"role_id"`
-	Role       *Role      `json:"role,omitempty"`
-	OperatorID *int       `json:"operator_id"`
-	Password   string     `json:"-"`
-	Language   string     `gorm:"default:vi" json:"language"`
-	Status     UserStatus `json:"status"`
-	CreatedAt  time.Time  `json:"created_at"`
-	UpdatedAt  time.Time  `json:"updated_at"`
-	Deleted    bool       `json:"-"`
-	DeletedAt  *time.Time `json:"-"`
+	ID         int `gorm:"primaryKey"`
+	FullName   string
+	Email      *string
+	Phone      *string
+	RoleID     *int
+	Role       *Role
+	OperatorID *int
+	Password   string `json:"-"`
+	Language   string `gorm:"default:vi"`
+	Status     UserStatus
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
+	Deleted    bool
+	DeletedAt  *time.Time
 }
 
 // RoleName returns the name of the loaded role, or "" when it was not loaded.

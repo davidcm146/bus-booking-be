@@ -11,6 +11,7 @@ import (
 type Handlers struct {
 	User *handler.UserHandler
 	Auth *handler.AuthHandler
+	Trip *handler.TripHandler
 }
 
 // New creates and configures the Gin engine with all route groups.
@@ -31,6 +32,7 @@ func New(h *Handlers, jwtSecret string) *gin.Engine {
 	{
 		registerUserRoutes(v1, h.User, jwtSecret)
 		registerAuthRoutes(v1, h.Auth, jwtSecret)
+		registerTripRoutes(v1, h.Trip)
 	}
 
 	return r
@@ -54,5 +56,14 @@ func registerUserRoutes(rg *gin.RouterGroup, h *handler.UserHandler, jwtSecret s
 		users.GET("/:id", h.GetByID)
 		users.PUT("/:id", h.Update)
 		users.DELETE("/:id", h.Delete)
+	}
+}
+
+// registerTripRoutes registers all /trips endpoints (public).
+func registerTripRoutes(rg *gin.RouterGroup, h *handler.TripHandler) {
+	trips := rg.Group("/trips")
+	{
+		trips.GET("", h.Search)
+		trips.GET("/:id", h.GetByID)
 	}
 }
