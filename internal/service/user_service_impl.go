@@ -38,10 +38,15 @@ func (s *userServiceImpl) CreateUser(ctx context.Context, req request.CreateUser
 		return nil, apperror.Internal(i18n.KeyAuthFailedHashPassword)
 	}
 
+	var phone *string
+	if req.Phone != "" {
+		phone = &req.Phone
+	}
+
 	user := &model.User{
 		FullName: req.FullName,
 		Email:    &req.Email,
-		Phone:    &req.Phone,
+		Phone:    phone,
 		Password: hashedPassword,
 		RoleID:   &role.ID,
 		Role:     role,
