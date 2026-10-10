@@ -20,6 +20,7 @@ const (
 	KeyAuthFailedHashPassword  = "auth.failed_hash_password"
 	KeyAuthFailedRegister      = "auth.failed_register"
 	KeyAuthFailedGenerateToken = "auth.failed_generate_token"
+	KeyAuthFailedOAuth         = "auth.failed_oauth"
 
 	KeyUserNotFound      = "user.not_found"
 	KeyUserEmailConflict = "user.email_conflict"

@@ -36,3 +36,11 @@ func (m *MockAuthService) Me(ctx context.Context) (*response.UserResponse, error
 	}
 	return ret.Get(0).(*response.UserResponse), ret.Error(1)
 }
+
+func (m *MockAuthService) GoogleOAuth(ctx context.Context, code string) (*response.LoginResponse, error) {
+	ret := m.Called(ctx, code)
+	if ret.Get(0) == nil {
+		return nil, ret.Error(1)
+	}
+	return ret.Get(0).(*response.LoginResponse), ret.Error(1)
+}
