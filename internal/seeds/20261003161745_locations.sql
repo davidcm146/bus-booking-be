@@ -20,7 +20,7 @@ BEGIN;
 -- 1) BUS STATIONS
 -- ---------------------------------------------------------------------
 INSERT INTO locations
-    (administrative_area_id, name, type, address, latitude, longitude, status, created_at, updated_at)
+    (administrative_area_id, operator_id, name, type, address, latitude, longitude, status, created_at, updated_at)
 SELECT
     a.id,
     NULL,
@@ -171,7 +171,7 @@ FROM (VALUES
 -- ===== 96 Cà Mau (gồm Bạc Liêu cũ) =====
 ('32002','96','Bến xe Cà Mau','Ca Mau Bus Station','Phường An Xuyên, Cà Mau',9.174000,105.151000),
 ('31825','96','Bến xe Bạc Liêu','Bac Lieu Bus Station','Phường Bạc Liêu, Cà Mau',9.278000,105.717000),
-('31942','96','Bến xe Giá Rai','Gia Rai Bus Station','Phường Giá Rai, Cà Mau',9.238000,105.463000)
+('31942','96','Bến xe Giá Rai','Gia Rai Bus Station','Phường Giá Rai, Cà Mau',9.238000,105.463000),
 
 -- ===== 31 Hải Phòng (gồm Hải Dương cũ) =====
 ('11383','31','Bến xe Niệm Nghĩa','Niem Nghia Bus Station','Số 1 Nguyễn Văn Linh, Hải Phòng',20.8400,106.6800),
