@@ -12,10 +12,11 @@ type AuthModule struct {
 	Handler *handler.AuthHandler
 }
 
-func NewAuthModule(db *gorm.DB, jwtCfg configs.JWTConfig) *AuthModule {
-	repo := repository.NewUserRepository(db)
-	svc := service.NewAuthService(repo, jwtCfg)
+func NewAuthModule(db *gorm.DB, jwtCfg configs.JWTConfig, oauthCfg configs.OAuthConfig) *AuthModule {
+	userRepo := repository.NewUserRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
+	svc := service.NewAuthService(userRepo, roleRepo, jwtCfg, oauthCfg)
 	return &AuthModule{
-		Handler: handler.NewAuthHandler(svc),
+		Handler: handler.NewAuthHandler(svc, oauthCfg),
 	}
 }

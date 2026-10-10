@@ -11,6 +11,7 @@ import (
 type Container struct {
 	user     *module.UserModule
 	auth     *module.AuthModule
+	trip     *module.TripModule
 	handlers *router.Handlers
 }
 
@@ -18,12 +19,14 @@ type Container struct {
 func NewContainer(db *gorm.DB, cfg *configs.Config) *Container {
 	c := &Container{
 		user: module.NewUserModule(db),
-		auth: module.NewAuthModule(db, cfg.JWT),
+		auth: module.NewAuthModule(db, cfg.JWT, cfg.OAuth),
+		trip: module.NewTripModule(db),
 	}
 
 	c.handlers = &router.Handlers{
 		User: c.user.Handler,
 		Auth: c.auth.Handler,
+		Trip: c.trip.Handler,
 	}
 
 	return c

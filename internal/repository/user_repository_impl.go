@@ -6,11 +6,18 @@ import (
 
 	"github.com/davidcm146/bus-booking-be/internal/model"
 	"github.com/davidcm146/bus-booking-be/internal/shared/apperror"
-	"github.com/davidcm146/bus-booking-be/internal/shared/constant"
+	"github.com/davidcm146/bus-booking-be/internal/shared/dberror"
+	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
-// userRepositoryImpl is the GORM-backed implementation of UserRepository.
+// userConflicts maps unique constraints on users to their conflict messages.
+var userConflicts = []dberror.Option{
+	dberror.WithConflict("users_email_key", i18n.KeyUserEmailConflict),
+	dberror.WithConflict("users_phone_key", i18n.KeyUserPhoneConflict),
+}
+
 type userRepositoryImpl struct {
 	db *gorm.DB
 }
@@ -20,68 +27,69 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 	return &userRepositoryImpl{db: db}
 }
 
+func (r *userRepositoryImpl) active(ctx context.Context) *gorm.DB {
+	return r.db.WithContext(ctx).Joins("Role").Where("users.deleted = ?", false)
+}
+
 func (r *userRepositoryImpl) Create(ctx context.Context, user *model.User) error {
-	if err := r.db.WithContext(ctx).Create(user).Error; err != nil {
-		return apperror.Internal(constant.MsgKeyFailedCreateUser)
+	if err := r.db.WithContext(ctx).Omit(clause.Associations).Create(user).Error; err != nil {
+		return dberror.Translate(err, i18n.KeyUserFailedCreate, userConflicts...)
 	}
 	return nil
 }
 
-func (r *userRepositoryImpl) FindByID(ctx context.Context, id int) (*model.User, error) {
+func (r *userRepositoryImpl) findOne(ctx context.Context, query string, arg any) (*model.User, error) {
 	var user model.User
-	if err := r.db.WithContext(ctx).First(&user, "id = ?", id).Error; err != nil {
+	if err := r.active(ctx).First(&user, query, arg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperror.NotFound(constant.MsgKeyUserNotFound)
+			return nil, apperror.NotFound(i18n.KeyUserNotFound)
 		}
-		return nil, apperror.Internal(constant.MsgKeyFailedFindUser)
+		return nil, dberror.Translate(err, i18n.KeyUserFailedFind)
 	}
 	return &user, nil
+}
+
+func (r *userRepositoryImpl) FindByID(ctx context.Context, id int) (*model.User, error) {
+	return r.findOne(ctx, "users.id = ?", id)
 }
 
 func (r *userRepositoryImpl) FindByEmail(ctx context.Context, email string) (*model.User, error) {
-	var user model.User
-	if err := r.db.WithContext(ctx).First(&user, "email = ?", email).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperror.NotFound(constant.MsgKeyUserNotFound)
-		}
-		return nil, apperror.Internal(constant.MsgKeyFailedFindUser)
-	}
-	return &user, nil
+	return r.findOne(ctx, "users.email = ?", email)
 }
 
 func (r *userRepositoryImpl) FindByPhone(ctx context.Context, phoneNumber string) (*model.User, error) {
-	var user model.User
-	if err := r.db.WithContext(ctx).First(&user, "phone = ?", phoneNumber).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, apperror.NotFound(constant.MsgKeyUserNotFound)
-		}
-		return nil, apperror.Internal(constant.MsgKeyFailedFindUser)
-	}
-	return &user, nil
+	return r.findOne(ctx, "users.phone = ?", phoneNumber)
 }
 
 func (r *userRepositoryImpl) FindAll(ctx context.Context) ([]model.User, error) {
 	var users []model.User
-	if err := r.db.WithContext(ctx).Find(&users).Error; err != nil {
-		return nil, apperror.Internal(constant.MsgKeyFailedFetchUsers)
+	if err := r.active(ctx).Find(&users).Error; err != nil {
+		return nil, dberror.Translate(err, i18n.KeyUserFailedFetch)
 	}
 	return users, nil
 }
 
 func (r *userRepositoryImpl) Update(ctx context.Context, user *model.User) error {
-	if err := r.db.WithContext(ctx).Save(user).Error; err != nil {
-		return apperror.Internal(constant.MsgKeyFailedUpdateUser)
+	result := r.db.WithContext(ctx).Model(user).Where("deleted = ?", false).
+		Select("full_name", "email", "phone", "role_id", "operator_id", "language", "status", "updated_at").
+		Updates(user)
+	if result.Error != nil {
+		return dberror.Translate(result.Error, i18n.KeyUserFailedUpdate, userConflicts...)
+	}
+	if result.RowsAffected == 0 {
+		return apperror.NotFound(i18n.KeyUserNotFound)
 	}
 	return nil
 }
 
 func (r *userRepositoryImpl) Delete(ctx context.Context, id int) error {
-	result := r.db.WithContext(ctx).Delete(&model.User{}, "id = ?", id)
+	result := r.db.WithContext(ctx).Model(&model.User{}).Where("id = ? AND deleted = ?", id, false).
+		Updates(map[string]any{"deleted": true, "deleted_at": gorm.Expr("CURRENT_TIMESTAMP")})
 	if result.Error != nil {
-		return apperror.Internal(constant.MsgKeyFailedDeleteUser)
+		return dberror.Translate(result.Error, i18n.KeyUserFailedDelete)
 	}
 	if result.RowsAffected == 0 {
-		return apperror.NotFound(constant.MsgKeyUserNotFound)
+		return apperror.NotFound(i18n.KeyUserNotFound)
 	}
 	return nil
 }

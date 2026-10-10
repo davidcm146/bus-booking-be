@@ -51,7 +51,7 @@ func Error(c *gin.Context, err error) {
 			Success: false,
 			Error: gin.H{
 				"code":    appErr.Code,
-				"message": i18n.T(ctx, appErr.MessageKey),
+				"message": i18n.T(ctx, string(appErr.MessageKey), nil),
 			},
 		})
 		return
@@ -61,7 +61,7 @@ func Error(c *gin.Context, err error) {
 		Success: false,
 		Error: gin.H{
 			"code":    constant.CodeInternalError,
-			"message": i18n.T(ctx, constant.MsgKeyInternalError),
+			"message": i18n.T(ctx, string(i18n.KeyErrorInternal), nil),
 		},
 	})
 }
@@ -74,7 +74,7 @@ func ValidationError(c *gin.Context, details any) {
 		Success: false,
 		Error: gin.H{
 			"code":    constant.CodeValidationError,
-			"message": i18n.T(ctx, constant.MsgKeyValidationFailed),
+			"message": i18n.T(ctx, string(i18n.KeyErrorValidationFailed), nil),
 			"details": details,
 		},
 	})

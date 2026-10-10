@@ -32,46 +32,30 @@ const (
 const (
 	CodeInternalError   = "INTERNAL_ERROR"
 	CodeValidationError = "VALIDATION_ERROR"
+	CodeBadRequestError = "BAD_REQUEST"
+	CodeNotFoundError   = "NOT_FOUND"
+	CodeConflictError   = "CONFLICT"
+	CodeUnauthorized    = "UNAUTHORIZED"
+	CodeForbidden       = "FORBIDDEN"
 )
 
-// --- Generic error message keys ---
+// --- Business time zone (Vietnam has no DST, so a fixed UTC+7 offset is exact) ---
 const (
-	MsgKeyResourceNotFound MsgKey = "error.resource_not_found"
-	MsgKeyBadRequest       MsgKey = "error.bad_request"
-	MsgKeyInternalError    MsgKey = "error.internal"
-	MsgKeyResourceConflict MsgKey = "error.resource_conflict"
-	MsgKeyUnauthorized     MsgKey = "error.unauthorized"
-	MsgKeyForbidden        MsgKey = "error.forbidden"
-	MsgKeyValidationFailed MsgKey = "error.validation_failed"
-	MsgKeyInvalidIDFormat  MsgKey = "error.invalid_id_format"
+	BusinessTimeZoneName   = "Asia/Ho_Chi_Minh"
+	BusinessTimeZoneOffset = 7 * 60 * 60
+	DateLayout             = "2006-01-02"
 )
 
-// --- Auth message keys ---
+// --- Trip search ---
 const (
-	MsgKeyMissingAuthHeader   MsgKey = "auth.missing_header"
-	MsgKeyInvalidAuthFormat   MsgKey = "auth.invalid_format"
-	MsgKeyInvalidToken        MsgKey = "auth.invalid_token"
-	MsgKeyInvalidCredentials  MsgKey = "auth.invalid_credentials"
-	MsgKeyFailedHashPassword  MsgKey = "auth.failed_hash_password"
-	MsgKeyFailedRegister      MsgKey = "auth.failed_register"
-	MsgKeyFailedGenerateToken MsgKey = "auth.failed_generate_token"
+	DefaultTripPageSize = 25
+	MaxTripPageSize     = 100
 )
 
-// --- User message keys ---
 const (
-	MsgKeyUserNotFound      MsgKey = "user.not_found"
-	MsgKeyUserEmailConflict MsgKey = "user.email_conflict"
-	MsgKeyUserPhoneConflict MsgKey = "user.phone_conflict"
-	MsgKeyFailedCreateUser  MsgKey = "user.failed_create"
-	MsgKeyFailedFindUser    MsgKey = "user.failed_find"
-	MsgKeyFailedFetchUsers  MsgKey = "user.failed_fetch"
-	MsgKeyFailedUpdateUser  MsgKey = "user.failed_update"
-	MsgKeyFailedDeleteUser  MsgKey = "user.failed_delete"
-)
-
-// --- Validator custom message keys ---
-const (
-	MsgKeyPhone          MsgKey = "validator.phone"
-	MsgKeyStrongPassword MsgKey = "validator.strong_password"
-	MsgKeyFallback       MsgKey = "validator.fallback"
+	PgCodeNotNullViolation    = "23502"
+	PgCodeForeignKeyViolation = "23503"
+	PgCodeUniqueViolation     = "23505"
+	PgCodeCheckViolation      = "23514"
+	PgCodeInvalidText         = "22P02"
 )

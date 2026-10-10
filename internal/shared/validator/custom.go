@@ -5,6 +5,7 @@ import (
 	"unicode"
 
 	"github.com/davidcm146/bus-booking-be/internal/shared/constant"
+	"github.com/davidcm146/bus-booking-be/internal/shared/i18n"
 	govalidator "github.com/go-playground/validator/v10"
 )
 
@@ -74,8 +75,7 @@ func validatePassword(fl govalidator.FieldLevel) bool {
 	return hasUpper && hasLower && hasDigit
 }
 
-// init registers built-in custom validators.
 func init() {
-	RegisterCustom(constant.TagPhone, validatePhone, constant.MsgKeyPhone)
-	RegisterCustom(constant.TagStrongPassword, validatePassword, constant.MsgKeyStrongPassword)
+	RegisterCustom(constant.TagPhone, validatePhone, i18n.KeyValidatorPhone)
+	RegisterCustom(constant.TagStrongPassword, validatePassword, i18n.KeyValidatorStrongPassword)
 }
